@@ -1,0 +1,70 @@
+pipeline {
+  agent any
+  tools {
+        maven 'Maven-3.9.9'
+        jdk 'JDK-17'
+    }
+  environment {
+    DOCKER_IMAGE = 'milanvadhavana/employee-api'
+    DOCKER_TAG = "${BUILD_NUMBER}"
+	DOCKER_CREDS = credentials('docker-credss')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main',
+            url: 'https://github.com/milankvadhavana/simpal-jenkins-demo.git'
+            
+      }
+    }
+
+    stage('Build & Test') {
+      steps {
+        bat 'mvn clean test'
+      }
+      post {
+        always {
+          junit '**/target/surefire-reports/*.xml'
+        }
+      }
+    }
+
+    stage('Docker Build') {
+      steps {
+        bat "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+        bat "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+      }
+    }
+
+    stage('Docker Push') {
+      steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-credentials',
+            usernameVariable: 'DOCKER_USER',
+            passwordVariable: 'DOCKER_PASS'
+        )]){
+            bat """
+            docker login -u %DOCKER_USER% -p %DOCKER_PASS%
+            docker push %DOCKER_IMAGE%:%DOCKER_TAG%
+            docker push %DOCKER_IMAGE%:latest
+            """
+        }
+      }
+	}
+
+    stage('Deploy') {
+      steps {
+        
+        bat "docker stop springboot-app || exit 0"
+        bat "docker rm springboot-app || exit 0"
+        bat "docker run -d -p 9090:8080 --name springboot-app %DOCKER_IMAGE%:latest"
+      }
+    }
+  }
+
+  post {
+    success { echo 'Pipeline succeeded!' }
+    failure { echo 'Pipeline failed — check logs!' }
+  }
+}

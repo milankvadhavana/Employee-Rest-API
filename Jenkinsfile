@@ -2,9 +2,7 @@ pipeline {
   agent any
   
   tools {
-    // Use the exact names that exist in your Jenkins configuration
-    maven 'Maven'      // Jenkins suggests this exists
-    // Remove JDK for now - it's not configured
+    maven 'Maven'  // Use the Maven installation name from Jenkins
   }
   
   environment {
@@ -16,25 +14,33 @@ pipeline {
     stage('Checkout') {
       steps {
         git branch: 'main',
-            url: 'https://github.com/milankvadhavana/Employee-Rest-API.git'
+            url: 'https://github.com/milankvadhavana/Employee-Rest-API.git',
+            credentialsId: 'github-credss'
       }
     }
 
     stage('Build & Test') {
       steps {
-        sh 'mvn clean test'
+        bat '''
+          echo Building with Maven...
+          mvn --version
+          mvn clean compile
+          mvn test
+        '''
       }
       post {
         always {
-          junit '**/target/surefire-reports/*.xml'
+          junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
         }
       }
     }
 
     stage('Docker Build') {
       steps {
-        sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-        sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+        bat """
+          docker build -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} .
+          docker tag ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} ${env.DOCKER_IMAGE}:latest
+        """
       }
     }
 
@@ -45,32 +51,32 @@ pipeline {
             usernameVariable: 'DOCKER_USERNAME',
             passwordVariable: 'DOCKER_PASSWORD'
         )]) {
-          sh '''
-            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
-            docker push ${DOCKER_IMAGE}:latest
-          '''
+          bat """
+            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+            docker push %DOCKER_IMAGE%:%DOCKER_TAG%
+            docker push %DOCKER_IMAGE%:latest
+          """
         }
       }
     }
 
     stage('Deploy') {
       steps {
-        sh '''
-          docker stop springboot-app || true
-          docker rm springboot-app || true
-          docker run -d -p 9090:8080 --name springboot-app ${DOCKER_IMAGE}:latest
-        '''
+        bat """
+          docker stop springboot-app || exit 0
+          docker rm springboot-app || exit 0
+          docker run -d -p 9090:8080 --name springboot-app %DOCKER_IMAGE%:latest
+        """
       }
     }
   }
 
   post {
     success { 
-      echo 'Pipeline succeeded!' 
+      echo 'Pipeline completed successfully!' 
     }
     failure { 
-      echo 'Pipeline failed — check logs!'
+      echo 'Pipeline failed! Check the logs above.'
     }
   }
 }

@@ -2,9 +2,9 @@ pipeline {
   agent any
   
   tools {
-    // Make sure these match your Jenkins Global Tool Configuration
-    maven 'Maven-3.9.9'  // Change if needed
-    jdk 'JDK-17'         // Change if needed
+    // Use the exact names that exist in your Jenkins configuration
+    maven 'Maven'      // Jenkins suggests this exists
+    // Remove JDK for now - it's not configured
   }
   
   environment {
@@ -40,33 +40,27 @@ pipeline {
 
     stage('Docker Push') {
       steps {
-        script {
-          // Using withCredentials properly
-          withCredentials([usernamePassword(
+        withCredentials([usernamePassword(
             credentialsId: 'docker-credss',
             usernameVariable: 'DOCKER_USERNAME',
             passwordVariable: 'DOCKER_PASSWORD'
-          )]) {
-            // Better Docker login method
-            sh '''
-              echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
-            '''
-            sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-            sh "docker push ${DOCKER_IMAGE}:latest"
-          }
+        )]) {
+          sh '''
+            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+            docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+            docker push ${DOCKER_IMAGE}:latest
+          '''
         }
       }
     }
 
     stage('Deploy') {
       steps {
-        script {
-          sh '''
-            docker stop springboot-app || true
-            docker rm springboot-app || true
-            docker run -d -p 9090:8080 --name springboot-app ${DOCKER_IMAGE}:latest
-          '''
-        }
+        sh '''
+          docker stop springboot-app || true
+          docker rm springboot-app || true
+          docker run -d -p 9090:8080 --name springboot-app ${DOCKER_IMAGE}:latest
+        '''
       }
     }
   }
@@ -77,10 +71,6 @@ pipeline {
     }
     failure { 
       echo 'Pipeline failed — check logs!'
-      // Optional: Clean up on failure
-      script {
-        sh 'docker logout || true'
-      }
     }
   }
 }

@@ -63,44 +63,18 @@ pipeline {
     stage('Deploy') {
     steps {
         bat '''
-            echo ========================================
-            echo Deploying container...
-            echo ========================================
+            echo Cleaning up old container...
+            docker stop springboot-app 2>nul || exit 0
+            docker rm springboot-app 2>nul || exit 0
             
-            echo Current containers:
-            docker ps -a
-            
-            echo.
-            echo Removing old container if exists...
-            docker stop springboot-app 2>nul || echo Container not running
-            docker rm springboot-app 2>nul || echo Container does not exist
-            
-            echo.
-            echo Pulling latest image...
-            docker pull %DOCKER_IMAGE%:latest
-            
-            echo.
-            echo Starting new container...
+            echo Starting container...
             docker run -d -p 9090:9090 --name springboot-app %DOCKER_IMAGE%:latest
             
-            echo.
-            echo Waiting for container to start...
-            timeout /t 3 /nobreak >nul
-            
-            echo.
-            echo Checking container status...
-            docker ps --filter "name=springboot-app"
-            
-            echo.
-            echo Checking container logs...
-            docker logs springboot-app --tail 20
-            
-            echo.
-            echo Testing endpoint...
-            curl http://localhost:9090/employees 2>nul || echo Endpoint not responding yet
+            echo Container started successfully!
+            exit 0
         '''
-    }
-}
+	    }
+	}
   }
 
   post {

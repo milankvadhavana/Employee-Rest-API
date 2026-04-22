@@ -63,13 +63,13 @@ pipeline {
             }
         }
 
-        stage('Docker Push') {
-    steps {
-        withCredentials([usernamePassword(
-            credentialsId: 'dockerhub-credentials',
-            usernameVariable: 'DOCKER_USERNAME',
-            passwordVariable: 'DOCKER_PASSWORD'
-        )]) {
+     stage('Docker Push') {
+    	steps {
+        	withCredentials([usernamePassword(
+            	credentialsId: 'dockerhub-credentials',
+            	usernameVariable: 'DOCKER_USERNAME',
+            	passwordVariable: 'DOCKER_PASSWORD'
+        	)]) {
             bat '''
                 echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
                 docker push %DOCKER_IMAGE%:%DOCKER_TAG%
@@ -90,8 +90,6 @@ pipeline {
             }
         }
     }
-
-<<<<<<< HEAD
     stage('Deploy') {
       steps {
         bat """
@@ -100,7 +98,6 @@ pipeline {
           docker run -d -p 9090:9090 --name springboot-app %DOCKER_IMAGE%:latest
         """
       }
-=======
     post {
         success { 
             echo '========================================'

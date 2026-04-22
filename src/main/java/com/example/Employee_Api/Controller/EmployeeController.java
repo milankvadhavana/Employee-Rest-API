@@ -28,7 +28,7 @@ public class EmployeeController {
 
     @GetMapping
     public ResponseEntity<List<Employee>> getAllEmployees() {
-    	System.out.print("Hello Jenkins !!!");
+//    	System.out.print("Hello Jenkins !!!");
     	return ResponseEntity.ok(employeeService.getAllEmployees());
     }
 

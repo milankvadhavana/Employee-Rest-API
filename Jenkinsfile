@@ -37,10 +37,8 @@ pipeline {
 
     stage('Docker Build') {
       steps {
-        bat """
-          docker build -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} .
-          docker tag ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} ${env.DOCKER_IMAGE}:latest
-        """
+        bat "docker build -t %DOCKER_IMAGE%:%DOCKER_TAG% ."
+        bat "docker tag %DOCKER_IMAGE%:%DOCKER_TAG% %DOCKER_IMAGE%:latest"
       }
     }
 
@@ -51,11 +49,14 @@ pipeline {
             usernameVariable: 'DOCKER_USERNAME',
             passwordVariable: 'DOCKER_PASSWORD'
         )]) {
-          bat """
-            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
-            docker push %DOCKER_IMAGE%:%DOCKER_TAG%
-            docker push %DOCKER_IMAGE%:latest
-          """
+          bat '''
+                        echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+                        if %errorlevel% neq 0 exit /b %errorlevel%
+                        echo Successfully logged in to Docker Hub
+                        docker push %DOCKER_IMAGE%:%DOCKER_TAG%
+                        docker push %DOCKER_IMAGE%:latest
+                        docker logout
+                    '''
         }
       }
     }
@@ -65,7 +66,7 @@ pipeline {
         bat """
           docker stop springboot-app || exit 0
           docker rm springboot-app || exit 0
-          docker run -d -p 9090:8080 --name springboot-app %DOCKER_IMAGE%:latest
+          docker run -d -p 9090:9090 --name springboot-app %DOCKER_IMAGE%:latest
         """
       }
     }

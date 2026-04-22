@@ -2,7 +2,7 @@ pipeline {
   agent any
   
   tools {
-    maven 'Maven'  // Use the Maven installation name from Jenkins
+    maven 'Maven'  
   }
   
   environment {
@@ -15,7 +15,7 @@ pipeline {
       steps {
         git branch: 'main',
             url: 'https://github.com/milankvadhavana/Employee-Rest-API.git',
-            credentialsId: 'github-credss'
+            credentialsId: 'github-credentails'
       }
     }
 
@@ -47,7 +47,7 @@ pipeline {
     stage('Docker Push') {
       steps {
         withCredentials([usernamePassword(
-            credentialsId: 'docker-credss',
+            credentialsId: 'dockerhub-credentials',
             usernameVariable: 'DOCKER_USERNAME',
             passwordVariable: 'DOCKER_PASSWORD'
         )]) {

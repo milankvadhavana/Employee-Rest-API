@@ -43,23 +43,16 @@ pipeline {
     }
 
     stage('Docker Push') {
-      steps {
-        withCredentials([usernamePassword(
-            credentialsId: 'dockerhub-credentials',
-            usernameVariable: 'DOCKER_USERNAME',
-            passwordVariable: 'DOCKER_PASSWORD'
-        )]) {
-          bat '''
-                        echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
-                        if %errorlevel% neq 0 exit /b %errorlevel%
-                        echo Successfully logged in to Docker Hub
-                        docker push %DOCKER_IMAGE%:%DOCKER_TAG%
-                        docker push %DOCKER_IMAGE%:latest
-                        docker logout
-                    '''
-        }
-      }
+    steps {
+        bat '''
+            
+            echo dckr_pat_DOEdKHP41-JzfVkRwidJfrgrXU8 | docker login -u milanvadhavana --password-stdin
+            docker push %DOCKER_IMAGE%:%DOCKER_TAG%
+            docker push %DOCKER_IMAGE%:latest
+            docker logout
+        '''
     }
+}
 
     stage('Deploy') {
       steps {
